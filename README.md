@@ -1,45 +1,40 @@
-# electron-quick-start
+# Electron Affinity Memory Leak
 
-**Clone and run for a quick way to see Electron in action.**
+**Run with leakage:**
+`npm run leak`
 
-This is a minimal Electron application based on the [Quick Start Guide](https://electronjs.org/docs/tutorial/quick-start) within the Electron documentation.
+**Run without leakage:**
+`npm start` will not leak
 
-**Use this app along with the [Electron API Demos](https://electronjs.org/#get-started) app for API code examples to help you get started.**
+Leakage occurs if `affinity` is used. Each refresh will leak ~1.5Mb memory.
+It's worth noting that "leaked memory" is defined as "memory not yet garbage collected"
+From what I can tell, when affinity is on, the leaked memory in renderer process is never garbage collected.
 
-A basic Electron application needs just these files:
+### Augmenting report
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.js` - Starts the app and creates a browser window to render HTML. This is the app's **main process**.
-- `index.html` - A web page to render. This is the app's **renderer process**.
+Just add entry in `constants.js` with the property from memory data
 
-You can learn more about each of these components within the [Quick Start Guide](https://electronjs.org/docs/tutorial/quick-start).
+`path` is used to locate the value of the property in the memory data
 
-## To Use
+`name` is used to prefix the report output
 
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
+### Heap snapshots
+Heap snapshots are taken in the renderer process at every refresh and written to disk
 
-```bash
-# Clone this repository
-git clone https://github.com/electron/electron-quick-start
-# Go into the repository
-cd electron-quick-start
-# Install dependencies
-npm install
-# Run the app
-npm start
+### Renderer process memory data
+
+*Includes:*
 ```
+webFrame: webFrame.getResourceUsage(), 
+processHeap: process.getHeapStatistics(), 
+processMemUsage: process.memoryUsage(), 
+processMemoryInfo: process.getSystemMemoryInfo(),
+```
+###  Main process memory data
 
-Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
-
-## Resources for Learning Electron
-
-- [electronjs.org/docs](https://electronjs.org/docs) - all of Electron's documentation
-- [electronjs.org/community#boilerplates](https://electronjs.org/community#boilerplates) - sample starter apps created by the community
-- [electron/electron-quick-start](https://github.com/electron/electron-quick-start) - a very basic starter Electron app
-- [electron/simple-samples](https://github.com/electron/simple-samples) - small applications with ideas for taking them further
-- [electron/electron-api-demos](https://github.com/electron/electron-api-demos) - an Electron app that teaches you how to use Electron
-- [hokein/electron-sample-apps](https://github.com/hokein/electron-sample-apps) - small demo apps for the various Electron APIs
-
-## License
-
-[CC0 1.0 (Public Domain)](LICENSE.md)
+*Includes:*
+```
+memObject.processHeap = process.getHeapStatistics();
+memObject.processMemoryInfo = process.getSystemMemoryInfo();
+memObject.processMemUsage = process.memoryUsage();
+```

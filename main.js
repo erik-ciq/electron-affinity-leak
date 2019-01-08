@@ -1,50 +1,76 @@
-// Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+let { BrowserWindow, app, session, ipcMain } = require('electron')
+const path = require('path');
+const fs = require('fs');
+const { mainProcessPropsToReport, rendererProcessPropsToReport } = require('./constants');
+const createMemoryReport = require('./createMemoryReport');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+const mainProcessMemoryData = [];
+const rendererProcessMemoryData = [];
 
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
-
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+function writeReport({dataPath, reportPath, memArray, memObject, reportProps, reportTitle}) {
+  memArray.push(memObject);
+  fs.writeFileSync(dataPath, JSON.stringify(memArray, null, 2));
+  const report = createMemoryReport(memArray, reportProps);
+  const pretty = JSON.stringify(report, null, 2);
+  fs.writeFileSync(reportPath, pretty);
+  console.log(`${reportTitle}: \n`, pretty, '\n');
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
-
-// Quit when all windows are closed.
-app.on('window-all-closed', function () {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
+function rendererProcessReport(arg) {
+  const memObject = { ...arg, timestamp: Date.now() };
+  const reportProps = {
+    dataPath: './rendererProcessMemoryData.json',
+    reportPath: './rendererProcessReport.json',
+    memArray: rendererProcessMemoryData,
+    memObject,
+    reportProps: rendererProcessPropsToReport,
+    reportTitle: 'Renderer Process Report',
   }
-})
+  writeReport(reportProps);
+}
 
-app.on('activate', function () {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow()
+function mainProcessReport() {
+  // main process
+  const memObject = { pid: process.pid, timestamp: Date.now() };
+  
+  memObject.processHeap = process.getHeapStatistics();
+  memObject.processMemoryInfo = process.getSystemMemoryInfo();
+  memObject.processMemUsage = process.memoryUsage();
+  
+  const reportProps = {
+    dataPath: './mainProcessMemoryData.json',
+    reportPath: './mainProcessReport.json',
+    memArray: mainProcessMemoryData,
+    memObject,
+    reportProps: mainProcessPropsToReport,
+    reportTitle: 'Main Process Report',
   }
-})
+  writeReport(reportProps);
+}
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+function clearSessionData(ses) {
+  ses.getCacheSize(size => mainProcessMemoryObject.cacheSize = size);
+  ses.clearStorageData();
+  ses.flushStorageData();
+}
+
+app.on('ready', async function() {
+  const affinity = process.argv.includes('--affinity') ? 'test' : null;
+  const ses = new session.fromPartition('name');
+  const main = new BrowserWindow({
+    webPreferences: {
+      nodeIntegration: true,
+      affinity,
+      session: ses,
+    }
+  });
+  main.loadFile(path.join(__dirname, 'index.html'));
+
+  ipcMain.on('reload', (e, arg) => {
+    rendererProcessReport(arg);
+    // main process doesn't leak memory as far as I can tell. Feel free to uncomment if you'd care to examine
+    // mainProcessReport();
+    clearSessionData(ses);
+  });
+});
+
