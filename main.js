@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { mainProcessPropsToReport, rendererProcessPropsToReport } = require('./constants');
 const createMemoryReport = require('./createMemoryReport');
-
+mainProcessMemoryObject = {};
 const mainProcessMemoryData = [];
 const rendererProcessMemoryData = [];
 
@@ -36,6 +36,7 @@ function mainProcessReport() {
   memObject.processHeap = process.getHeapStatistics();
   memObject.processMemoryInfo = process.getSystemMemoryInfo();
   memObject.processMemUsage = process.memoryUsage();
+  
   
   const reportProps = {
     dataPath: './mainProcessMemoryData.json',
