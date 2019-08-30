@@ -12,6 +12,9 @@
 **Run with random affinity on each close:**
 `npm run fixcloseleak` - closes and reopens with different affinity each time to remove leakage
 
+**Run with intentional process crashing every 5th close:**
+`npm run crash` - crashes the render process every 5th close in order to reclaim affinity memory
+
 Leakage occurs if `affinity` is used. Each refresh will leak ~1.5Mb memory.
 It's worth noting that "leaked memory" is defined as "memory not yet garbage collected"
 From what I can tell, when affinity is on, the leaked memory in renderer process is never garbage collected.

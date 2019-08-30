@@ -6,6 +6,7 @@
   "scripts": {
     "start": "electron .",
     "leak": "electron . --affinity",
+    "crash": "electron . --affinity --close --crash",
     "closeleak": "electron . --affinity --close",
     "closenoleak": "electron . --close",
     "fixcloseleak": "electron . --affinity --close --random"

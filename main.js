@@ -3,12 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const { mainProcessPropsToReport, rendererProcessPropsToReport } = require('./constants');
 const createMemoryReport = require('./createMemoryReport');
-mainProcessMemoryObject = {};
+const mainProcessMemoryObject = {};
 const mainProcessMemoryData = [];
 const rendererProcessMemoryData = [];
-let ses;
-let affinity;
-let closeCount = 0;
+let affinity, originalAffinity, allowCrashes, ses, closeCount = 0;
 
 function writeReport({dataPath, reportPath, memArray, reportProps, reportTitle}) {
   fs.writeFileSync(dataPath, JSON.stringify(memArray, null, 2));
@@ -58,14 +56,14 @@ function clearSessionData(ses) {
   ses.flushStorageData();
 }
 
-function createWindow({ affinityArg, close, random, crash }) {
+function createWindow({ close, random, crash }) {
 
   if (!ses) {
     ses = new session.fromPartition('name');
   }
 
   if (random) {
-    affinity = `${affinityArg}${Math.random(1000)}`;
+    affinity = `${originalAffinity}${Math.random(1000)}`;
   }
 
   const main = new BrowserWindow({
@@ -86,19 +84,19 @@ function createWindow({ affinityArg, close, random, crash }) {
     else {
       let crashArg = false; // assume we won't crash
 
-      if (closeCount % 5 === 0) {
+      if (allowCrashes && closeCount % 5 === 0) {
         crashArg = true; // crash on every 5th reload to recover memory leak
       }
-      
+
       main.loadFile(path.join(__dirname, 'closingLeak.html')); // load code to automatically close the window
-      main.on('closed', (e, arg) => createWindow({ affinityArg: affinity, close, random, crash: crashArg })); // recreate the window on close with our crash argument
+      main.on('closed', (e, arg) => createWindow({ close, random, crash: crashArg })); // recreate the window on close with our crash argument
     }
    
     main.webContents.on('crashed', (e) => {
       console.log('crashed');
       main.close(); // close and destroy window if we crashed to avoid a dangling white screen
       main.destroy();
-      setTimeout(() => createWindow({ affinityArg: affinity, close, random }), 2000); // recreate our window after a 2 second pause. Instantly recreating will crash the process
+      setTimeout(() => createWindow({ close, random }), 2000); // recreate our window after a 2 second pause. Instantly recreating will crash the process
     });
 
   } else {
@@ -106,11 +104,12 @@ function createWindow({ affinityArg, close, random, crash }) {
   }
 }
 
-affinity = process.argv.includes('--affinity') ? 'test' : null; // if affinity arg is provided via CLI, set affinity to 'test'
+allowCrashes = process.argv.includes('--crash'); // if crash arg is provided, allow crashing to reclaim memory
+affinity = originalAffinity = process.argv.includes('--affinity') ? 'test' : null; // if affinity arg is provided via CLI, set affinity to 'test'
 const random = process.argv.includes('--random'); // randomizes the uuid each time to ensure no affinity processes are re-used
 const close = process.argv.includes('--close'); // if close arg is provided, then produce memory leak using closes rather than refreshes
 
-app.on('ready', () => createWindow({ affinityArg: affinity, close, random }));
+app.on('ready', () => createWindow({ affinityArg: originalAffinity, close, random }));
 app.on('window-all-closed', e => e.preventDefault())
 
 ipcMain.on('memoryUpdate', (e, arg) => {
