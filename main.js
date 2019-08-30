@@ -81,7 +81,7 @@ function createWindow() {
     main.webContents.on('crashed', () => {
       console.log('crashed');
       createWindow({ close: true });
-    })
+    });
   } else {
     main.loadFile(path.join(__dirname, 'refreshingLeak.html'));
   }
