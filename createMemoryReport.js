@@ -38,6 +38,7 @@ function createRawReport(memoryObjects, propsToReport) {
         const propStats = reportPropStats(memoryObjects, propToReport.path, propToReport.name);
         rawReport = { ...rawReport, ...propStats };
     })
+    rawReport.currentHeap = memoryObjects[memoryObjects.length - 1].processMemUsage.heapUsed;
     return rawReport;
 }
 
