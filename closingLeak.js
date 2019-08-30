@@ -8,7 +8,7 @@ for (let i = 0; i < 1000000; i++) {
 window.addEventListener("beforeunload", (event) => {
     const snapshotPath = path.join(__dirname, 'snapshots', `snapshot${Date.now().toString()}.heapsnapshot`);
     // process.takeHeapSnapshot(snapshotPath);
-    ipcRenderer.send('close', {
+    ipcRenderer.send('memoryUpdate', {
         webFrame: webFrame.getResourceUsage(),
         processHeap: process.getHeapStatistics(),
         processMemUsage: process.memoryUsage(),

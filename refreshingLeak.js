@@ -8,7 +8,7 @@ for (let i = 0; i < 1000000; i++) {
 window.addEventListener("beforeunload", (event) => {
     const snapshotPath = path.join(__dirname, 'snapshots', `snapshot${Date.now().toString()}.heapsnapshot`);
     // process.takeHeapSnapshot(snapshotPath);
-    ipcRenderer.send('reload', {
+    ipcRenderer.send('memoryUpdate', {
         webFrame: webFrame.getResourceUsage(), 
         processHeap: process.getHeapStatistics(), 
         processMemUsage: process.memoryUsage(), 
@@ -17,8 +17,4 @@ window.addEventListener("beforeunload", (event) => {
     });
 });
 
-function reload() {
-    location.reload();
-}
-
-setTimeout(reload, 2000);
+setTimeout(location.reload, 2000);
