@@ -5,7 +5,10 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "leak": "electron . --affinity"
+    "leak": "electron . --affinity",
+    "closeleak": "electron . --affinity --close",
+    "closenoleak": "electron . --close",
+    "fixcloseleak": "electron . --affinity --close --random"
   },
   "repository": "https://github.com/electron/electron-quick-start",
   "keywords": [

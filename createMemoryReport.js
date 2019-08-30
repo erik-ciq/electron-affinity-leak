@@ -10,7 +10,7 @@ function resolve(path, obj) {
 function formatBytes(a,b){if(0==a)return"0 Bytes";var c=1024,d=b||2,e=["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"],f=Math.floor(Math.log(a)/Math.log(c));return parseFloat((a/Math.pow(c,f)).toFixed(d))+" "+e[f]}
 
 function reportPropStats(memoryObjects, propPath, propName) {
-    // const usages = memoryObjects.map(o => resolve(propPath, o));
+    const usages = memoryObjects.map(o => resolve(propPath, o));
     const totalLeakageKey = `${propName}TotalLeakage`;
     const rawReport = {};
     // const timestampedUsage = memoryObjects.map(o => { o.timestamp, o.memoryUsage });
@@ -26,9 +26,9 @@ function reportPropStats(memoryObjects, propPath, propName) {
     rawReport[totalLeakageKey] = sum >= 0 ? sum : 0;
     // prevent divide by 0
     const stepsLength = steps.length > 0 ? steps.length : 1;
-    rawReport[`${propName}AvgLeakagePerRefresh`] = rawReport[totalLeakageKey] / stepsLength;
-    // rawReport[`${propName}Min`] = arrMin(usages);
-    // rawReport[`${propName}Max`] = arrMax(usages);
+    rawReport[`${propName}AvgLeakagePerReload`] = rawReport[totalLeakageKey] / stepsLength;
+    rawReport[`${propName}Min`] = arrMin(usages);
+    rawReport[`${propName}Max`] = arrMax(usages);
     return rawReport;
 }
 
@@ -47,7 +47,7 @@ function createHumanReport(rawReport, memoryObjects) {
     keys.forEach(key => {
         report[key] = formatBytes(rawReport[key]);
     })
-    report.totalRefreshes = memoryObjects.length;
+    report.totalReloads = memoryObjects.length;
     return report;
 }
 

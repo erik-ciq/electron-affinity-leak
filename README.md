@@ -1,10 +1,16 @@
 # Electron Affinity Memory Leak
 
-**Run with leakage:**
-`npm run leak`
+**Run with leakage on refresh:**
+`npm run leak` - refreshes every one second with affinity on to demonstrate leakage
 
 **Run without leakage:**
 `npm start` will not leak
+
+**Run with leakage on close:**
+`npm run closeleak` - closes and reopens with the same affinity to demonstrate leakage
+
+**Run with random affinity on each close:**
+`npm run fixcloseleak` - closes and reopens with different affinity each time to remove leakage
 
 Leakage occurs if `affinity` is used. Each refresh will leak ~1.5Mb memory.
 It's worth noting that "leaked memory" is defined as "memory not yet garbage collected"
